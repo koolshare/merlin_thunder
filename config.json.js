@@ -1,8 +1,9 @@
 {
-"version":"2.1",
-"md5":"d5bd802d9a80e344a6b826fe72b22d2b",
-"home_url":"Module_thunder.asp",
-"title":"迅雷远程",
-"description":"迅雷远程~",
-"build_date":"2016-11-24_20:56:46"
+    "build_date": "2016-11-24_20:56:46", 
+    "description": "迅雷远程~", 
+    "home_url": "Module_thunder.asp", 
+    "md5": "9e83cf5b1b425d9470c065c085e565c1", 
+    "module": "thunder", 
+    "title": "迅雷远程", 
+    "version": "2.2"
 }
