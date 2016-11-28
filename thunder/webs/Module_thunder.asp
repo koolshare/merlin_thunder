@@ -223,7 +223,7 @@ function checkCmdRet(){
 
  											</table>
                                     	<div id="log_content" style="margin-top:10px;">
-											<textarea cols="63" rows="28" wrap="off" readonly="readonly" id="log_content1" style="width:99%; font-family:'Courier New', Courier, mono; font-size:11px;background:#475A5F;color:#FFFFFF;">
+											<textarea cols="63" rows="45" wrap="off" readonly="readonly" id="log_content1" style="width:99%; font-family:'Courier New', Courier, mono; font-size:11px;background:#475A5F;color:#FFFFFF;">
 												<% nvram_dump("syscmd.log","syscmd.sh"); %>
 											</textarea>
 										</div>
