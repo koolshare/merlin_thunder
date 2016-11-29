@@ -10,7 +10,7 @@ thunderPath=/koolshare/thunder
 # 开机自启
 start_with_system() {
 	if [ "$thunder_basic_request" = "01" ]; then
-		. /koolshare/thunder/xunlei.sh
+		sh /koolshare/thunder/xunlei.sh
 	fi
 }
 
