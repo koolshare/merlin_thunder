@@ -38,7 +38,7 @@ elif [ "$thunder_basic_request" = "10" ]; then
 		dbus set thunder_basic_status="010"
 		# add_cpulimit
 		# $thunderPath/portal &
-		. /koolshare/thunder/xunlei.sh
+		sh /koolshare/thunder/xunlei.sh
 		#dbus event onwanstart_thunder /jffs/scripts/start-thunder.sh
 	else
 		dbus set thunder_basic_status="00"
