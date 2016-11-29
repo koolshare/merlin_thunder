@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-11-28-001
+#脚本版本：2016-11-29-001
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -11,28 +11,22 @@
 #6.支持自动安装迅雷远程 Xware V1。只要把脚本的安装路径设置正确，运行脚本即可自动完成迅雷远程安装并启动守护进程。激活码的中文提示信息见日志；
 #
 SCRIPTS_DIR="/jffs/scripts"																						#常规脚本保存路径，不可以自定义
-if [ -e "/jffs/.koolshare/thunder" ]; then																		#判断是否已安装 Koolshare 梅林软件中心的迅雷远程
-	INSTALL_DIR=/jffs/.koolshare/thunder																		#Koolshare 梅林软件中心的迅雷远程安装路径，不可以自定义
-	PROCESS_1=thunder/lib																						#守护进程名称
-	LOCAL_FILE="xunlei.sh"																						#本脚本的文件名称，读取名称，不可以自定义
-	LOCAL_DIR="$INSTALL_DIR"																					#本脚本的文件名称，读取名称，不可以自定义
-	LOG_FILE="xunlei.log"																						#日志文件名称，不可以自定义
-	LOG_DIR="/tmp"																								#日志保存路径，不可以自定义
-	LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																			#日志文件完整路径
-	STATE_TYPE="1"
+INSTALL_DIR=$(var=`find /jffs -name portal`;echo ${var%/portal})												#自动识别 /jffs 分区的迅雷安装路径，无需自定义
+PROCESS_1=$(find /jffs -name portal|sed -r 's/(.*)\/(.*)\/(.*)/\2/')/lib										#自动识别守护进程名称，无需自定义
+LOCAL_FILE="$(basename "$0")"																					#本脚本的文件名称，读取名称，不可以自定义
+LOCAL_DIR="$(cd "$(dirname "$0")"; pwd)"																		#本脚本的保存路径，读取路径，不可以自定义
+if [ "$INSTALL_DIR" = "/jffs/.koolshare/thunder" ] || [ "$INSTALL_DIR" = "/koolshare/thunder" ]; then
+	STATE_TYPE="1"																								#Koolshare 软件中心版安装状态
+	LOG_DIR="/tmp"
 else
-	INSTALL_DIR=$(var=`find /jffs -name portal|grep -v /jffs/.koolshare/thunder`;echo ${var%/portal})			#自动识别 /jffs 分区的迅雷安装路径，无需自定义
-	PROCESS_1=$(find /jffs -name portal|grep -v /jffs/.koolshare/thunder|sed -r 's/(.*)\/(.*)\/(.*)/\2/')/lib	#自动识别守护进程名称，无需自定义
-	LOCAL_FILE="$(basename "$0")"																				#本脚本的文件名称，读取名称，不可以自定义
-	LOCAL_DIR="$(cd "$(dirname "$0")"; pwd)"																	#本脚本的保存路径，读取路径，不可以自定义
-	LOG_FILE="$(basename $0).log"																				#日志文件名称，可以自定义
+	STATE_TYPE="2"																								#自行安装状态
 	LOG_DIR="$(cd "$(dirname "$0")"; pwd)"																		#日志保存路径，可以自定义
-	LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																			#日志文件完整路径
-	STATE_TYPE="2"
 fi
+LOG_FILE="xunlei.log"																							#日志文件名称，不可以自定义
+LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
 check_autorun()
 {
-	if [ ! "$STATE_TYPE" = "1" ]; then
+	if [ "$STATE_TYPE" = "2" ]; then
 		CWS_X="sh ${LOCAL_DIR}/${LOCAL_FILE} &"
 		if [ -f "/usr/bin/dbus" ]; then
 			EOC=`dbus list __|grep "${LOCAL_DIR}/"${LOCAL_FILE}""`
@@ -118,19 +112,19 @@ sleep 1m
 check_xware_guard()
 {
 while true; do
-	COUNT_xware_guard=\`ps|grep -E "${LOCAL_FILE}"|grep -v grep|wc -l\`
-	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}|sleep 10m"|grep -v grep|awk '{print \$1}'\`
+	COUNT_xware_guard=\`ps|grep -E "${LOCAL_FILE}|thunder_config.sh"|grep -v grep|wc -l\`
+	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}|thunder_config.sh|sleep 10m"|grep -v grep|awk '{print \$1}'\`
 	if [ "\${COUNT_xware_guard}" -gt "1" ]; then
 		rm -rf "${LOG_FULL}"
-		echo "$(date +%Y年%m月%d日\ %X)： 守护进程线程过多，正在重启守护进程……"
+		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程线程过多，正在重启守护进程……"
 		kill \${PID_xware_guard}
-		. ${LOCAL_DIR}/${LOCAL_FILE}
+		sh ${LOCAL_DIR}/${LOCAL_FILE}
 	elif [ "\${COUNT_xware_guard}" -eq "0" ]; then
 		rm -rf "${LOG_FULL}"
-		echo "$(date +%Y年%m月%d日\ %X)： 守护进程运行异常，正在重启守护进程……"
-		. ${LOCAL_DIR}/${LOCAL_FILE}
+		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程运行异常，正在重启守护进程……"
+		sh ${LOCAL_DIR}/${LOCAL_FILE}
 #	else	
-#		echo "$(date +%Y年%m月%d日\ %X)： 守护进程运行正常！"
+#		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程运行正常！"
 	fi
 	sleep 1m
 done
@@ -143,8 +137,10 @@ EOF
 check_xware_guard_process()
 {
 	create_xware_guard_monitor
-	PROCESS_check_xware_guard=`ps|grep check_xware_guard|grep -v grep`
-	if [ -z "${PROCESS_check_xware_guard}" ]; then
+	COUNT_check_xware_guard=`ps|grep check_xware_guard|grep -v grep|wc -l`
+	PID_check_xware_guard=`ps|grep check_xware_guard|grep -v grep|awk '{print $1}'`
+	PROCESS_check_xware_guard=`ps|grep check_xware_guard|grep -v grep`	
+	if [ "${COUNT_check_xware_guard}" -eq "0" ]; then
 		sh check_xware_guard.sh
 	fi
 }
@@ -195,9 +191,9 @@ auto_upgrade_script()
 }
 check_xware()
 {
-	if [ ! "$STATE_TYPE" = "1" ]; then
+	if [ "$STATE_TYPE" = "2" ]; then
 		echo "$(date +%Y年%m月%d日\ %X)： 已检测到自行安装的迅雷远程，正在启动插件……"
-	else
+	elif [ "$STATE_TYPE" = "1" ]; then
 		echo "$(date +%Y年%m月%d日\ %X)： 已检测到 Koolshare 梅林固件软件中心的迅雷远程，将优先启动该插件……"
 	fi
 	echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程的安装路径为 \"$INSTALL_DIR\"，守护进程的名称为 \"$PROCESS_1\""
@@ -239,7 +235,11 @@ check_xware()
 	check_xware_link_status
 }
 while true; do
-	auto_upgrade_script>>"${LOG_FULL}" 2>&1
+	if [ "$STATE_TYPE" = "2" ]; then
+		auto_upgrade_script>>"${LOG_FULL}" 2>&1
+	elif [ "$STATE_TYPE" = "1" ]; then
+		check_xware>>"${LOG_FULL}" 2>&1
+	fi
 	check_xware_guard_process>>/dev/null 2>&1
 	sleep 10m																									#本脚本的循环执行周期为10分钟(秒单位为s，分钟单位为m，小时单位为h)
 	rm -rf "${LOG_FULL}"																						#清空日志内容(按周期循环重写，日志文件体积不会无限变大。如果需要查看历史日志，本行命令可以删除或用#注释掉)
