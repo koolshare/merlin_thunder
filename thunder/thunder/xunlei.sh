@@ -41,7 +41,7 @@ check_autorun()
 			CWS=`cat ${SCRIPTS_DIR}/wan-start|grep "${CWS_X}"`
 			if [ -z "${CWS}" ]; then
 				echo "$(date +%Y年%m月%d日\ %X)： 调整自启动方案，启用多线程并发自启动方案……"
-				sed -i "1a ${CWS_X}" "${SCRIPTS_DIR}/wan-start"
+				echo -e "${CWS_X}" >> "${SCRIPTS_DIR}/wan-start"
 			else
 				echo "$(date +%Y年%m月%d日\ %X)： 清除可能引起冲突的自启动命令……"
 				sed -i "/"${LOCAL_FILE}"/d" "${SCRIPTS_DIR}/wan-start"
