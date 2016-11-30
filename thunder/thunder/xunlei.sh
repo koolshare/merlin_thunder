@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-11-29-001
+#脚本版本：2016-11-30-001
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -22,7 +22,7 @@ else
 	STATE_TYPE="2"																								#自行安装状态
 	LOG_DIR="$(cd "$(dirname "$0")"; pwd)"																		#日志保存路径，可以自定义
 fi
-LOG_FILE="xunlei.log"																							#日志文件名称，不可以自定义
+LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
 check_autorun()
 {
@@ -46,7 +46,6 @@ check_autorun()
 				echo "$(date +%Y年%m月%d日\ %X)： 清除可能引起冲突的自启动命令……"
 				sed -i "/"${LOCAL_FILE}"/d" "${SCRIPTS_DIR}/wan-start"
 				echo "$(date +%Y年%m月%d日\ %X)： 启用多线程并发自启动方案……"
-#				sed -i "1a ${CWS_X}" "${SCRIPTS_DIR}/wan-start"	
 				echo -e "${CWS_X}" >> "${SCRIPTS_DIR}/wan-start"
 			fi
 		else
@@ -104,16 +103,15 @@ check_xware_link_status()
 create_xware_guard_monitor()
 {
 	cd /tmp
-#	if [ ! -e check_xware_guard.sh ]; then
 	cat > "check_xware_guard.sh" <<EOF
 #!/bin/sh
 #
-sleep 1m
 check_xware_guard()
 {
 while true; do
-	COUNT_xware_guard=\`ps|grep -E "${LOCAL_FILE}|thunder_config.sh"|grep -v grep|wc -l\`
-	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}|thunder_config.sh|sleep 10m"|grep -v grep|awk '{print \$1}'\`
+	sleep 1m
+	COUNT_xware_guard=\`ps|grep -E "${LOCAL_FILE}"|grep -v grep|wc -l\`
+	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}|sleep 10m"|grep -v grep|awk '{print \$1}'\`
 	if [ "\${COUNT_xware_guard}" -gt "1" ]; then
 		rm -rf "${LOG_FULL}"
 		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程线程过多，正在重启守护进程……"
@@ -123,16 +121,12 @@ while true; do
 		rm -rf "${LOG_FULL}"
 		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程运行异常，正在重启守护进程……"
 		sh ${LOCAL_DIR}/${LOCAL_FILE}
-#	else	
-#		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程运行正常！"
 	fi
-	sleep 1m
 done
 }
 check_xware_guard>>${LOG_FULL} 2>&1 &
 EOF
 	chmod 755 "check_xware_guard.sh"
-#	fi
 }
 check_xware_guard_process()
 {
@@ -167,7 +161,6 @@ download_script()
 }	
 auto_upgrade_script()
 {
-#	rm -rf ${LOG_FULL}
 	cd ${LOCAL_DIR}
 	echo "$(date +%Y年%m月%d日\ %X)： 正在连接服务器，检查更新脚本……"
 	download_script xunlei-*.sh
