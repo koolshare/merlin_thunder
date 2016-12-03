@@ -21,4 +21,5 @@ dbus remove __event__onwanstart_wan-start
 
 chmod 755 /koolshare/thunder/*
 chmod 755 /koolshare/scripts/*
+chmod 755 /koolshare/init.d/*
 
