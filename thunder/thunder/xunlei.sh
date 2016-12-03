@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-12-03-001
+#脚本版本：2016-12-03-002
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -24,7 +24,8 @@ else
 fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
-CYCLE_1=10
+CYCLE_1="1"																										#本脚本的循环执行周期数量
+CYCLE_UNIT="m"																									#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
 check_autorun()
 {
 	if [ "$STATE_TYPE" = "2" ]; then
@@ -64,17 +65,17 @@ EOF
 }
 check_xware_process_quantity()
 {
-	ps|grep "${PROCESS_1}"|grep -v grep|wc -l
+	process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver'|wc -l
 }
 check_xware_process_details()
 {
 	echo "******************************    迅雷远程线程详情    ******************************"
-#	ps|grep -E 'EmbedThunderManager|ETMDaemon|vod_httpserver'|grep -v grep										#获取迅雷远程相关进程的所有线程详情
-	process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver'
+	process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver'													#获取迅雷远程相关进程的所有线程详情
 	echo "**************************    迅雷远程的总线程数量：$(check_xware_process_quantity)    **************************"
 }
 check_xware_link_status()
 {
+	cd $INSTALL_DIR
 	rm -rf getsysinfo*
 	wget -c -N -q --tries=3 --timeout=5 -O getsysinfo http://127.0.0.1:9000/getsysinfo
 	if [ -e "getsysinfo" ]; then
@@ -133,15 +134,14 @@ EOF
 check_xware_guard_process()
 {
 	create_xware_guard_monitor
-	COUNT_check_xware_guard=`ps|grep check_xware_guard|grep -v grep|wc -l`
-	PID_check_xware_guard=`ps|grep check_xware_guard|grep -v grep|awk '{print $1}'`
-	PROCESS_check_xware_guard=`ps|grep check_xware_guard|grep -v grep`	
+	COUNT_check_xware_guard=`process_of check_xware_guard|wc -l`
 	if [ "${COUNT_check_xware_guard}" -eq "0" ]; then
 		sh check_xware_guard.sh
 	fi
 }
 download_script()
 {
+	cd $INSTALL_DIR
 	script=$(echo "$@" | awk '{ print substr($0, index($0,$5)) }');
 	for i in $script; do
 		wget -c -N -q --tries=3 --timeout=15 ftp://koolshare:koolshare@andywoo.vicp.cc/sda1/Scripts/$i
@@ -202,29 +202,30 @@ check_xware()
 	echo "$(date +%Y年%m月%d日\ %X)： 当前脚本的绝对路径为 \"$LOCAL_DIR\"，脚本的文件名称为 \"$LOCAL_FILE\""
 	echo "$(date +%Y年%m月%d日\ %X)： 导出日志的绝对路径为 \"$LOG_DIR\"，日志的文件名称为 \"$LOG_FILE\""	
 	check_autorun
-	COUNT_1=`ps|grep "${PROCESS_1}"|grep -v grep|wc -l`															#统计迅雷远程相关进程的总线程数量
-	PID_1=`ps|grep "${PROCESS_1}"|grep -v grep|awk '{print $1}'`												#获取迅雷远程相关进程的所有线程 PID
+	COUNT_1=$(check_xware_process_quantity)																		#统计迅雷远程相关进程的总线程数量
 	check_xware_process_details
 	cd $INSTALL_DIR
 	chmod 777 * -R
 	if [ -e lib ]; then
-		if [ -z $(process_of 'EmbedThunderManager')]||[ -z $(process_of 'ETMDaemon')]||[ -z $(process_of 'vod_httpserver')]; then
+		if [ -z "$(process_of 'EmbedThunderManager')" ]||[ -z "$(process_of 'ETMDaemon')" ]||[ -z "$(process_of 'vod_httpserver')" ]; then					#判断迅雷远程关键进程如果没有全部正在运行
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程关键进程未运行，正在启动……"
 			./portal>/dev/null 2>&1																				#重新启动迅雷远程
 			check_xware_process_details
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已启动完成！"
-		elif [ "${COUNT_1}" -lt "3" ]; then																		#判断迅雷远程关键进程正在运行，且线程数量小于3
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行异常，正在重启……"
-			./portal>/dev/null 2>&1																				#重新启动迅雷远程
-			check_xware_process_details
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
-		elif [ "${COUNT_1}" -ge "3" ] && [ "${COUNT_1}" -le "15" ]; then										#判断迅雷远程关键进程正在运行，且线程数量大于或等于3且小于或等于15
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行正常！"
-		elif [ "${COUNT_1}" -gt "15" ]; then																	#判断迅雷远程关键进程正在运行，且线程数量大于15
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程线程过多，设备负载过大，正在重启……"
-			./portal>/dev/null 2>&1																				#重新启动迅雷远程
-			check_xware_process_details
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
+		elif [ "$(process_of 'EmbedThunderManager')" ]&&[ "$(process_of 'ETMDaemon')" ]&&[ "$(process_of 'vod_httpserver')" ]; then							#判断迅雷远程关键进程如果全部正在运行
+			if [ "${COUNT_1}" -lt "3" ]; then																	#判断迅雷远程线程数量小于3
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行异常，正在重启……"
+				./portal>/dev/null 2>&1																			#重新启动迅雷远程
+				check_xware_process_details
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
+			elif [ "${COUNT_1}" -ge "3" ]&&[ "${COUNT_1}" -le "15" ]; then										#判断迅雷远程线程数量大于或等于3且小于或等于15
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行正常！"
+			elif [ "${COUNT_1}" -gt "15" ]; then																#判断迅雷远程线程数量大于15
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程线程过多，设备负载过大，正在重启……"
+				./portal>/dev/null 2>&1																			#重新启动迅雷远程
+				check_xware_process_details
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
+			fi
 		fi
 	elif [ -e portal ]; then
 		echo "$(date +%Y年%m月%d日\ %X)： 已检测到迅雷远程安装包，正在进行安装……"
@@ -244,6 +245,6 @@ while true; do
 		check_xware>>"${LOG_FULL}" 2>&1
 	fi
 	check_xware_guard_process>>/dev/null 2>&1
-	sleep ${CYCLE_1}m																							#本脚本的循环执行周期为10分钟(秒单位为s，分钟单位为m，小时单位为h)
+	sleep ${CYCLE_1}${CYCLE_UNIT}																				#本脚本的循环执行周期(秒单位为s，分钟单位为m，小时单位为h)
 	rm -rf "${LOG_FULL}"																						#清空日志内容(按周期循环重写，日志文件体积不会无限变大。如果需要查看历史日志，本行命令可以删除或用#注释掉)
 done &
