@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-11-30-001
+#脚本版本：2016-12-03-001
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -24,6 +24,7 @@ else
 fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
+CYCLE_1=10
 check_autorun()
 {
 	if [ "$STATE_TYPE" = "2" ]; then
@@ -68,7 +69,8 @@ check_xware_process_quantity()
 check_xware_process_details()
 {
 	echo "******************************    迅雷远程线程详情    ******************************"
-	ps|grep "${PROCESS_1}"|grep -v grep|awk '{print}'															#获取迅雷远程相关进程的所有线程详情
+#	ps|grep -E 'EmbedThunderManager|ETMDaemon|vod_httpserver'|grep -v grep										#获取迅雷远程相关进程的所有线程详情
+	process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver'
 	echo "**************************    迅雷远程的总线程数量：$(check_xware_process_quantity)    **************************"
 }
 check_xware_link_status()
@@ -182,6 +184,13 @@ auto_upgrade_script()
 			check_xware>>"${LOG_FULL}" 2>&1
 	fi
 }
+process_of()
+{
+	process=$(echo "$@" | awk '{ print substr($0, index($0,$5)) }');
+	for i in $process; do
+		ps|grep -E $i|grep -v grep
+	done
+}
 check_xware()
 {
 	if [ "$STATE_TYPE" = "2" ]; then
@@ -199,7 +208,7 @@ check_xware()
 	cd $INSTALL_DIR
 	chmod 777 * -R
 	if [ -e lib ]; then
-		if ( ! grep -qE 'EmbedThunderManager|ETMDaemon|vod_httpserver' "${LOG_FULL}" ); then					#判断迅雷远程关键进程如果没有全部正在运行
+		if [ -z $(process_of 'EmbedThunderManager')]||[ -z $(process_of 'ETMDaemon')]||[ -z $(process_of 'vod_httpserver')]; then
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程关键进程未运行，正在启动……"
 			./portal>/dev/null 2>&1																				#重新启动迅雷远程
 			check_xware_process_details
@@ -226,6 +235,7 @@ check_xware()
 		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程未安装或安装路径设置错误，请检查安装情况并设置正确的安装路径！"
 	fi
 	check_xware_link_status
+	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期为 ${CYCLE_1} 分钟，本日志将在 ${CYCLE_1} 分钟后更新！"
 }
 while true; do
 	if [ "$STATE_TYPE" = "2" ]; then
@@ -234,6 +244,6 @@ while true; do
 		check_xware>>"${LOG_FULL}" 2>&1
 	fi
 	check_xware_guard_process>>/dev/null 2>&1
-	sleep 10m																									#本脚本的循环执行周期为10分钟(秒单位为s，分钟单位为m，小时单位为h)
+	sleep ${CYCLE_1}m																							#本脚本的循环执行周期为10分钟(秒单位为s，分钟单位为m，小时单位为h)
 	rm -rf "${LOG_FULL}"																						#清空日志内容(按周期循环重写，日志文件体积不会无限变大。如果需要查看历史日志，本行命令可以删除或用#注释掉)
 done &
