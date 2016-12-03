@@ -24,7 +24,7 @@ else
 fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
-CYCLE_1="1"																										#本脚本的循环执行周期数量
+CYCLE_1="10"																									#本脚本的循环执行周期数量
 CYCLE_UNIT="m"																									#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
 check_autorun()
 {
