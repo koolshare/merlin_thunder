@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-12-03-002
+#脚本版本：2016-12-03-003
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -18,14 +18,22 @@ LOCAL_DIR="$(cd "$(dirname "$0")"; pwd)"																		#本脚本的保存路
 if [ "$INSTALL_DIR" = "/jffs/.koolshare/thunder" ] || [ "$INSTALL_DIR" = "/koolshare/thunder" ]; then
 	STATE_TYPE="1"																								#Koolshare 软件中心版安装状态
 	LOG_DIR="/tmp"
+	CYCLE_1=$thunder_CYCLE_1
+	CYCLE_UNIT=$thunder_CYCLE_UNIT
 else
 	STATE_TYPE="2"																								#自行安装状态
 	LOG_DIR="$(cd "$(dirname "$0")"; pwd)"																		#日志保存路径，可以自定义
+	CYCLE_1="15"																								#本脚本的循环执行周期数量
+	CYCLE_UNIT="m"																								#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
 fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
-CYCLE_1="10"																									#本脚本的循环执行周期数量
-CYCLE_UNIT="m"																									#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
+CYCLE_UNIT_zh="分钟"
+if [ $CYCLE_UNIT = "h" ]; then
+	CYCLE_UNIT_zh="小时"
+elif [ $CYCLE_UNIT = "s" ]; then
+	CYCLE_UNIT_zh="秒"
+fi
 check_autorun()
 {
 	if [ "$STATE_TYPE" = "2" ]; then
@@ -236,12 +244,13 @@ check_xware()
 		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程未安装或安装路径设置错误，请检查安装情况并设置正确的安装路径！"
 	fi
 	check_xware_link_status
-	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期为 ${CYCLE_1} 分钟，本日志将在 ${CYCLE_1} 分钟后更新！"
+	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期为 ${CYCLE_1} ${CYCLE_UNIT_zh}，本日志将在 ${CYCLE_1} ${CYCLE_UNIT_zh}后更新！"
 }
 while true; do
 	if [ "$STATE_TYPE" = "2" ]; then
 		auto_upgrade_script>>"${LOG_FULL}" 2>&1
 	elif [ "$STATE_TYPE" = "1" ]; then
+		eval `dbus export thunder`																				# 导入skipd中储存的数据
 		check_xware>>"${LOG_FULL}" 2>&1
 	fi
 	check_xware_guard_process>>/dev/null 2>&1

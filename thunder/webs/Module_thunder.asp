@@ -19,7 +19,20 @@
 <script type="text/javascript" src="/general.js"></script>
 <script type="text/javascript" src="/switcherplugin/jquery.iphone-switch.js"></script>
 <script type="text/javascript" src="/dbconf?p=thunder_&v=<% uptime(); %>"></script>
+<style>
+.input_option{
+	height:25px;
+	background-color:#576D73;
+	border-top-width:1px; 
+	border-bottom-width:1px; 
+	border-color:#888;	
+	color:#FFFFFF;
+	font-family:'Courier New', Courier, mono;
+	font-size:13px;
+}
+</style>
 <script>
+	
 var checkTime = 0;
 var thunderEnable = 0;
 var submitDatas = {};
@@ -27,6 +40,8 @@ submitDatas["action_mode"] = " Refresh ";
 submitDatas["SystemCmd"] = "thunder_config.sh";
 submitDatas["current_page"] = "Module_thunder.asp";
 submitDatas["thunder_basic_request"] = "00";
+submitDatas["thunder_CYCLE_1"] = document.getElementById("thunder_CYCLE_1").value;
+submitDatas["thunder_CYCLE_UNIT"] = document.getElementById("thunder_CYCLE_UNIT").value;
 function init() {
 	show_menu();
 	submitData("00");
@@ -218,6 +233,21 @@ function checkCmdRet(){
 													<th width="20%">信息提示</th>
 													<td>
 														<span id="thunder_info"></span>
+													</td>
+												</tr>
+												<tr>
+													<th>迅雷守护检测周期</th>
+													<td>
+														<span id="heartbeat_detai">
+														每:
+													  	<input type="text" maxlength="64" id="thunder_CYCLE_1" name="thunder_CYCLE_1" value="15" class="input_ss_table" style="width:20px;margin:0px 0px 3px 2px;" autocorrect="off" autocapitalize="off"></input>
+														<select id="thunder_CYCLE_UNIT" name="thunder_CYCLE_UNIT" style="width:70px;margin:0px 0px 0px 2px;" class="input_option" onchange="update_visibility();">
+															<option value="m" selected>分钟</option>
+															<option value="h">小时</option>
+														</select>
+														检测一次.
+
+														</span>
 													</td>
 												</tr>
 
