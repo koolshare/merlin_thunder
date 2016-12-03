@@ -46,6 +46,8 @@ function init() {
 	show_menu();
 	submitData("00");
 	checkCmdRet();
+	$("#thunder_CYCLE_1").val(db_thunder_["thunder_CYCLE_1"]);
+	$("#thunder_CYCLE_UNIT").val(db_thunder_["thunder_CYCLE_UNIT"]);
 }
 function openWeb() {
 	window.open("http://yuancheng.xunlei.com/")

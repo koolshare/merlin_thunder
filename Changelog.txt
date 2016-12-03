@@ -1,5 +1,8 @@
 Koolshare Asuswrt-Merlin adm Changelog
 ===========================================
+2.7.1.1
+   - fix	fix value in web won't fresh
+
 1.5
    - fix	fix startup with system issue
 

@@ -5,5 +5,6 @@ kill ${PID_all}
 rm -rf /koolshare/thunder
 rm -rf /koolshare/init.d/S02Thunder.sh
 rm -rf /koolshare/scripts/thunder_*.sh
+rm -rf /koolshare/scripts/uninstall_thunder.sh
 rm -rf /koolshare/webs/Module_thunder.asp
 
