@@ -248,7 +248,6 @@ function checkCmdRet(){
 															<option value="h">小时</option>
 														</select>
 														检测一次.
-
 														</span>
 													</td>
 												</tr>
