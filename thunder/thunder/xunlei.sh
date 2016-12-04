@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-12-04-001
+#脚本版本：2016-12-04-002
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -29,10 +29,13 @@ fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
 CYCLE_UNIT_zh="分钟"
+CRON_COM=`*/${CYCLE_1} * * * *`
 if [ $CYCLE_UNIT = "h" ]; then
 	CYCLE_UNIT_zh="小时"
+	CRON_COM=`* */${CYCLE_1} * * *`
 elif [ $CYCLE_UNIT = "s" ]; then
 	CYCLE_UNIT_zh="秒"
+	CRON_COM=`* * * * * sleep ${CYCLE_1}`
 fi
 check_autorun()
 {
@@ -122,7 +125,7 @@ check_xware_guard()
 while true; do
 	sleep 1m
 	COUNT_xware_guard=\`ps|grep -E "${LOCAL_FILE}"|grep -v grep|wc -l\`
-	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}|sleep ${CYCLE_1}${CYCLE_UNIT}"|grep -v grep|awk '{print \$1}'\`
+	PID_xware_guard=\`ps|grep -E "${LOCAL_FILE}"|grep -v grep|awk '{print \$1}'\`
 	if [ "\${COUNT_xware_guard}" -gt "1" ]; then
 		rm -rf "${LOG_FULL}"
 		echo "\$(date +%Y年%m月%d日\ %X)： 守护进程线程过多，正在重启守护进程……"
@@ -165,7 +168,7 @@ download_script()
 				echo "$(date +%Y年%m月%d日\ %X)： MD5 校验一致！"
 			fi
 		else
-			echo "$(date +%Y年%m月%d日\ %X)： 网络连接存在问题或服务器上无相应文件！"
+			echo "$(date +%Y年%m月%d日\ %X)： 网络连接异常或服务器上无脚本文件！"
 		fi			
 	done
 }	
@@ -246,14 +249,14 @@ check_xware()
 	check_xware_link_status
 	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期为 ${CYCLE_1} ${CYCLE_UNIT_zh}，本日志将在 ${CYCLE_1} ${CYCLE_UNIT_zh}后更新！"
 }
-while true; do
+xware_guard()
+{
 	if [ "$STATE_TYPE" = "2" ]; then
 		auto_upgrade_script>>"${LOG_FULL}" 2>&1 &
 	elif [ "$STATE_TYPE" = "1" ]; then
-		eval `dbus export thunder`																				# 导入skipd中储存的数据
+		eval `dbus export thunder` &																			# 导入skipd中储存的数据
 		check_xware>>"${LOG_FULL}" 2>&1 &
 	fi
 	check_xware_guard_process>>/dev/null 2>&1
-	sleep ${CYCLE_1}${CYCLE_UNIT}																				#本脚本的循环执行周期(秒单位为s，分钟单位为m，小时单位为h)
-	rm -rf "${LOG_FULL}"																						#清空日志内容(按周期循环重写，日志文件体积不会无限变大。如果需要查看历史日志，本行命令可以删除或用#注释掉)
-done &
+}
+${CRON_COM} xware_guard>"${LOG_FULL}" 2>&1 &
