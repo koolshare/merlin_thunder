@@ -243,8 +243,8 @@ function checkCmdRet(){
 													<td>
 														<span id="heartbeat_detai">
 														每:
-													  	<input type="text" maxlength="64" id="thunder_CYCLE_1" name="thunder_CYCLE_1" value="15" class="input_ss_table" style="width:20px;margin:0px 0px 3px 2px;" autocorrect="off" autocapitalize="off"></input>
-														<select id="thunder_CYCLE_UNIT" name="thunder_CYCLE_UNIT" style="width:70px;margin:0px 0px 0px 2px;" class="input_option" onchange="update_visibility();">
+													  	<input type="text" maxlength="64" id="thunder_basic_CYCLE_1" name="thunder_basic_CYCLE_1" value="15" class="input_ss_table" style="width:20px;margin:0px 0px 3px 2px;" autocorrect="off" autocapitalize="off"></input>
+														<select id="thunder_basic_CYCLE_UNIT" name="thunder_basic_CYCLE_UNIT" style="width:70px;margin:0px 0px 0px 2px;" class="input_option" onchange="update_visibility();">
 															<option value="m" selected>分钟</option>
 															<option value="h">小时</option>
 														</select>
