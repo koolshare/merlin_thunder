@@ -40,14 +40,15 @@ submitDatas["action_mode"] = " Refresh ";
 submitDatas["SystemCmd"] = "thunder_config.sh";
 submitDatas["current_page"] = "Module_thunder.asp";
 submitDatas["thunder_basic_request"] = "00";
-submitDatas["thunder_CYCLE_1"] = document.getElementById("thunder_CYCLE_1").value;
-submitDatas["thunder_CYCLE_UNIT"] = document.getElementById("thunder_CYCLE_UNIT").value;
+submitDatas["thunder_basic_CYCLE_1"] = document.form.thunder_basic_CYCLE_1.value;
+submitDatas["thunder_basic_CYCLE_UNIT"] = document.form.thunder_basic_CYCLE_UNIT.value;
 function init() {
 	show_menu();
 	submitData("00");
 	checkCmdRet();
-	$("#thunder_CYCLE_1").val(db_thunder_["thunder_CYCLE_1"]);
-	$("#thunder_CYCLE_UNIT").val(db_thunder_["thunder_CYCLE_UNIT"]);
+	for (var field in db_thunder_){
+	    $('#'+field).val(db_thunder_[field]);
+	}
 }
 function openWeb() {
 	window.open("http://yuancheng.xunlei.com/")

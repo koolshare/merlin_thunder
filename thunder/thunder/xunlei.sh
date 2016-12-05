@@ -18,8 +18,8 @@ LOCAL_DIR="$(cd "$(dirname "$0")"; pwd)"																		#本脚本的保存路
 if [ "$INSTALL_DIR" = "/jffs/.koolshare/thunder" ] || [ "$INSTALL_DIR" = "/koolshare/thunder" ]; then
 	STATE_TYPE="1"																								#Koolshare 软件中心版安装状态
 	LOG_DIR="/tmp"
-	CYCLE_1=$thunder_CYCLE_1
-	CYCLE_UNIT=$thunder_CYCLE_UNIT
+	CYCLE_1=$thunder_basic_CYCLE_1
+	CYCLE_UNIT=$thunder_basic_CYCLE_UNIT
 else
 	STATE_TYPE="2"																								#自行安装状态
 	LOG_DIR="$(cd "$(dirname "$0")"; pwd)"																		#日志保存路径，可以自定义
