@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #迅雷远程 Xware V1 守护进程脚本
-#脚本版本：2016-12-04-001
+#脚本版本：2016-12-22-001
 #改进作者：泽泽酷儿
 #1.本脚本仅适用于迅雷远程V1系列，启动时自动生成守护进程；使用者需自行手动设置自启动。直接运行命令为：sh /脚本路径/脚本名称；
 #2.可自动判断迅雷远程的关键进程崩溃情况，并自动重启；
@@ -12,19 +12,20 @@
 #
 SCRIPTS_DIR="/jffs/scripts"																						#常规脚本保存路径，不可以自定义
 INSTALL_DIR=$(var=`find /jffs -name portal`;echo ${var%/portal})												#自动识别 /jffs 分区的迅雷安装路径，无需自定义
-PROCESS_1=$(find /jffs -name portal|sed -r 's/(.*)\/(.*)\/(.*)/\2/')/lib										#自动识别守护进程名称，无需自定义
 LOCAL_FILE="$(basename "$0")"																					#本脚本的文件名称，读取名称，不可以自定义
 LOCAL_DIR="$(cd "$(dirname "$0")"; pwd)"																		#本脚本的保存路径，读取路径，不可以自定义
+CYCLE_1="15"																									#本脚本的循环执行周期数量
+CYCLE_UNIT="m"																									#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
 if [ "$INSTALL_DIR" = "/jffs/.koolshare/thunder" ] || [ "$INSTALL_DIR" = "/koolshare/thunder" ]; then
 	STATE_TYPE="1"																								#Koolshare 软件中心版安装状态
 	LOG_DIR="/tmp"
-	CYCLE_1=$thunder_basic_CYCLE_1
-	CYCLE_UNIT=$thunder_basic_CYCLE_UNIT
+	if [ $(dbus list thunder_basic_CYCLE_1) ] && [ $(dbus list thunder_basic_CYCLE_UNIT) ]; then
+		CYCLE_1=$thunder_basic_CYCLE_1
+		CYCLE_UNIT=$thunder_basic_CYCLE_UNIT
+	fi
 else
 	STATE_TYPE="2"																								#自行安装状态
 	LOG_DIR="$(cd "$(dirname "$0")"; pwd)"																		#日志保存路径，可以自定义
-	CYCLE_1="10"																								#本脚本的循环执行周期数量
-	CYCLE_UNIT="m"																								#本脚本的循环执行周期单位(秒单位为s，分钟单位为m，小时单位为h)
 fi
 LOG_FILE="${LOCAL_FILE%.*}.log"																					#日志文件名称，不可以自定义
 LOG_FULL="${LOG_DIR}"/"${LOG_FILE}"																				#日志文件完整路径
@@ -79,36 +80,42 @@ check_xware_process_details()
 {
 	echo "******************************    迅雷远程线程详情    ******************************"
 	process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver'													#获取迅雷远程相关进程的所有线程详情
-	echo "**************************    迅雷远程的总线程数量：$(check_xware_process_quantity)    **************************"
+	if [ $(check_xware_process_quantity) -lt 10 ]; then
+		echo "***************************    迅雷远程的总线程数量：$(check_xware_process_quantity)    ***************************"
+	elif [ $(check_xware_process_quantity) -ge 10 ]; then
+		echo "**************************    迅雷远程的总线程数量：$(check_xware_process_quantity)    **************************"
+	fi
 }
 check_xware_link_status()
 {
 	cd $INSTALL_DIR
 	rm -rf getsysinfo*
-	wget -c -N -q --tries=3 --timeout=5 -O getsysinfo http://127.0.0.1:9000/getsysinfo
+	wget -c -N -q --tries=3 http://127.0.0.1:9000/getsysinfo
 	if [ -e "getsysinfo" ]; then
 		ACTIVE_CODE=`cut -d '"' -f2 getsysinfo`
 		USER_ID=`cut -d '"' -f6 getsysinfo`
 		VERSION=`cut -d '"' -f4 getsysinfo`
-		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程版本号是：V$VERSION"
+		if [ $VERSION ]; then
+			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程核心版本号：V$VERSION"
+		fi
 		if [ $ACTIVE_CODE ]; then
-			echo "$(date +%Y年%m月%d日\ %X)： 你的迅雷远程激活码是：$ACTIVE_CODE"
+			echo "$(date +%Y年%m月%d日\ %X)： 你的迅雷远程激活码：$ACTIVE_CODE"
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程尚未绑定用户及设备，请尽快完成绑定！"
 		elif [ $USER_ID ]; then
-			echo "$(date +%Y年%m月%d日\ %X)： 设备绑定的用户名是：$USER_ID"
+			echo "$(date +%Y年%m月%d日\ %X)： 设备绑定的账户：$USER_ID"
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程与服务器连接正常！"
-		else
+		elif [ ! $ACTIVE_CODE ] && [ ! $USER_ID ]; then
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程与服务器失去响应，正在重启……"
 			./portal>/dev/null 2>&1
 			check_xware_process_details
 			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"						
-			wget -c -N -q --tries=3 --timeout=5 -O getsysinfo http://127.0.0.1:9000/getsysinfo
+			wget -c -N -q --tries=3 http://127.0.0.1:9000/getsysinfo
 			if [ ! $ACTIVE_CODE ] && [ ! $USER_ID ]; then
-				echo "$(date +%Y年%m月%d日\ %X)： 网络连接异常，请检查网络连接状态！"
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程服务器运行异常！"
 			fi
 		fi
 	else
-		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程安装错误，请重新安装……"
+		echo "$(date +%Y年%m月%d日\ %X)： 网络连接异常，请检查网络连接状态！"	
 	fi
 }
 create_xware_guard_monitor()
@@ -206,45 +213,45 @@ check_xware()
 	elif [ "$STATE_TYPE" = "1" ]; then
 		echo "$(date +%Y年%m月%d日\ %X)： 已检测到 Koolshare 梅林固件软件中心的迅雷远程，将优先启动该插件……"
 	fi
-	echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程的安装路径为 \"$INSTALL_DIR\"，守护进程的名称为 \"$PROCESS_1\""
-	echo "$(date +%Y年%m月%d日\ %X)： 当前脚本的绝对路径为 \"$LOCAL_DIR\"，脚本的文件名称为 \"$LOCAL_FILE\""
-	echo "$(date +%Y年%m月%d日\ %X)： 导出日志的绝对路径为 \"$LOG_DIR\"，日志的文件名称为 \"$LOG_FILE\""	
+	echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程的安装路径：\"$INSTALL_DIR\""
+	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的名称：\"${LOCAL_DIR}/${LOCAL_FILE}\""
+	echo "$(date +%Y年%m月%d日\ %X)： 当前脚本的绝对路径：\"$LOCAL_DIR\"，脚本的文件名称：\"$LOCAL_FILE\""
+	echo "$(date +%Y年%m月%d日\ %X)： 导出日志的绝对路径：\"$LOG_DIR\"，日志的文件名称：\"$LOG_FILE\""	
 	check_autorun
 	COUNT_1=$(check_xware_process_quantity)																		#统计迅雷远程相关进程的总线程数量
 	check_xware_process_details
-	cd $INSTALL_DIR
-	chmod 777 * -R
-	if [ -e lib ]; then
-		if [ -z "$(process_of 'EmbedThunderManager')" ]||[ -z "$(process_of 'ETMDaemon')" ]||[ -z "$(process_of 'vod_httpserver')" ]; then					#判断迅雷远程关键进程如果没有全部正在运行
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程关键进程未运行，正在启动……"
-			./portal>/dev/null 2>&1																				#重新启动迅雷远程
-			check_xware_process_details
-			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已启动完成！"
-		elif [ "$(process_of 'EmbedThunderManager')" ]&&[ "$(process_of 'ETMDaemon')" ]&&[ "$(process_of 'vod_httpserver')" ]; then							#判断迅雷远程关键进程如果全部正在运行
-			if [ "${COUNT_1}" -lt "3" ]; then																	#判断迅雷远程线程数量小于3
-				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行异常，正在重启……"
+	if [ -e $INSTALL_DIR ]; then
+		cd $INSTALL_DIR
+		chmod 777 * -R
+		if [ -e lib ]; then
+			if [ -z "$(process_of 'EmbedThunderManager')" ]||[ -z "$(process_of 'ETMDaemon')" ]||[ -z "$(process_of 'vod_httpserver')" ]; then					#判断迅雷远程关键进程如果没有全部正在运行
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程关键进程未运行，正在启动……"
 				./portal>/dev/null 2>&1																			#重新启动迅雷远程
 				check_xware_process_details
-				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
-			elif [ "${COUNT_1}" -ge "3" ]&&[ "${COUNT_1}" -le "15" ]; then										#判断迅雷远程线程数量大于或等于3且小于或等于15
-				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行正常！"
-			elif [ "${COUNT_1}" -gt "15" ]; then																#判断迅雷远程线程数量大于15
-				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程线程过多，设备负载过大，正在重启……"
-				./portal>/dev/null 2>&1																			#重新启动迅雷远程
-				check_xware_process_details
-				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
+				echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已启动完成！"
+			elif [ "$(process_of 'EmbedThunderManager')" ]&&[ "$(process_of 'ETMDaemon')" ]&&[ "$(process_of 'vod_httpserver')" ]; then							#判断迅雷远程关键进程如果全部正在运行
+				if [ "${COUNT_1}" -gt "15" ]; then																#判断迅雷远程线程数量大于15
+					echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程线程过多，设备负载过大，正在重启……"
+					./portal>/dev/null 2>&1																		#重新启动迅雷远程
+					check_xware_process_details
+					echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程已重启完成！"
+				else
+					echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程运行正常！"
+				fi
 			fi
+		elif [ -e portal ]; then
+			echo "$(date +%Y年%m月%d日\ %X)： 已检测到迅雷远程安装包，正在进行安装……"
+			./portal>/dev/null 2>&1
+			check_xware_process_details
+			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程安装完成！"
+		else
+			echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程程序损坏，请重新安装！"
 		fi
-	elif [ -e portal ]; then
-		echo "$(date +%Y年%m月%d日\ %X)： 已检测到迅雷远程安装包，正在进行安装……"
-		./portal>/dev/null 2>&1
-		check_xware_process_details
-		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程安装完成！"
 	else
-		echo "$(date +%Y年%m月%d日\ %X)： 迅雷远程未安装或安装路径设置错误，请检查安装情况并设置正确的安装路径！"
+		echo "$(date +%Y年%m月%d日\ %X)： 未检测到迅雷远程安装路径！"	
 	fi
 	check_xware_link_status
-	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期为 ${CYCLE_1} ${CYCLE_UNIT_zh}，本日志将在 ${CYCLE_1} ${CYCLE_UNIT_zh}后更新！"
+	echo "$(date +%Y年%m月%d日\ %X)： 守护进程的检查周期：${CYCLE_1} ${CYCLE_UNIT_zh}，本日志将在 ${CYCLE_1} ${CYCLE_UNIT_zh}后更新！"
 }
 while true; do
 	if [ "$STATE_TYPE" = "2" ]; then

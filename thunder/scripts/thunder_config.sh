@@ -1,4 +1,13 @@
 #!/bin/sh
+
+process_of()
+{
+	process=$(echo "$@" | awk '{ print substr($0, index($0,$5)) }');
+	for i in $process; do
+		ps|grep -E $i|grep -v grep
+	done
+}
+
 eval `dbus export thunder`
 
 thunderPath=/koolshare/thunder
@@ -25,8 +34,10 @@ if [ "$thunder_basic_request" = "20" ]; then
 		#$thunderPath/portal -s
 		rm -rf /tmp/xunlei.log
 		echo "$(date +%Y年%m月%d日\ %X)： 关闭迅雷相关进程……" > /tmp/xunlei.log
-		PID_all=`ps|grep -E "check_xware_guard|sh(.*)xunlei.sh|thunder|xunlei|xware|sleep 1m|sleep 10m"|grep -v grep|awk '{print $1}'`
-		kill ${PID_all}
+		PID_all=`process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware|sleep 1m|sleep 10m'|awk '{print $1}'`
+		until [ -z `process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware'` ]; do
+			kill ${PID_all}
+		done
 		echo "$(date +%Y年%m月%d日\ %X)： 完成！" > /tmp/xunlei.log
 		#dbus remove __event__onwanstart_thunder
 		
