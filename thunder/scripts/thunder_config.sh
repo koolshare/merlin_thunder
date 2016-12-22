@@ -35,9 +35,11 @@ if [ "$thunder_basic_request" = "20" ]; then
 		rm -rf /tmp/xunlei.log
 		echo "$(date +%Y年%m月%d日\ %X)： 关闭迅雷相关进程……" > /tmp/xunlei.log
 		PID_all=`process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware|sleep 1m|sleep 10m'|awk '{print $1}'`
-		until [ -z `process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware'` ]; do
-			kill ${PID_all}
-		done
+		for k in 'EmbedThunderManager' 'ETMDaemon' 'vod_httpserver' 'check_xware_guard' 'thunder' 'xunlei' 'xware'; do
+			until [ -z `process_of $k` ]; do
+				kill ${PID_all}
+			done
+		done;
 		echo "$(date +%Y年%m月%d日\ %X)： 完成！" > /tmp/xunlei.log
 		#dbus remove __event__onwanstart_thunder
 		
@@ -75,4 +77,3 @@ fi
 
 
 #dbus save thunder
-

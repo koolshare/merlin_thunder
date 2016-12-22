@@ -16,6 +16,8 @@ rm -rf /koolshare/webs/Module_thunder.asp
 rm -rf /tmp/thunder*
 rm -rf /tmp/xunlei*
 PID_all=`process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware|sleep 1m|sleep 10m'|awk '{print $1}'`
-until [ -z `process_of 'EmbedThunderManager|ETMDaemon|vod_httpserver|check_xware_guard|thunder|xunlei|xware'` ]; do
-	kill ${PID_all}
+for k in 'EmbedThunderManager' 'ETMDaemon' 'vod_httpserver' 'check_xware_guard' 'thunder' 'xunlei' 'xware'; do
+	until [ -z `process_of $k` ]; do
+		kill ${PID_all}
+	done
 done;
