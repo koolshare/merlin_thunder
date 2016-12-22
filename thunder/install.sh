@@ -12,6 +12,7 @@ cp -rf /tmp/thunder/res /koolshare
 
 cd /
 rm -rf /tmp/thunder* >/dev/null 2>&1
+rm -rf /tmp/xunlei* >/dev/null 2>&1
 
 if [ -f /koolshare/init.d/S70Thunder.sh ]; then
 	rm -rf /koolshare/init.d/S70Thunder.sh
