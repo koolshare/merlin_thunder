@@ -5,5 +5,5 @@
     "md5": "5acf2144e483cfcb8d85c14f6988f663", 
     "module": "thunder", 
     "title": "迅雷远程", 
-    "version": "2.7.2.2"
+    "version": "2.7.2.3"
 }
